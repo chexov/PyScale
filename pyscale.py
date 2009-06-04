@@ -87,9 +87,8 @@ class RightScale(object):
 	
 
 
-def cleanUpDelploymnets():
+def cleanUpDeployments(right):
 	DEPLOYMENTS_TO_SAVE = [3201, 12228, 8610, 15852]
-	right = RightScale(sys.argv[1], sys.argv[2], 2951)
 		
 	index = right.deployments_index()
 	xmldoc = minidom.parseString(index.read())
@@ -103,7 +102,7 @@ def cleanUpDelploymnets():
 			right.deployments_delete(deployment_id)
 
 
-def cleanUpServerTemplates():
+def cleanUpServerTemplates(right):
 	SERVERTEMPLATES_TO_SAVE = [13792, 919, 13788, 13745, 13791, 13088, 13793, 13777, 16962, 15507, 18060, 20483, 20484]
 	index = right.servertemplates_index()
 	xmldoc = minidom.parseString(index.read())
@@ -116,7 +115,7 @@ def cleanUpServerTemplates():
 			right.servertemplates_delete(template_id)
 	
 	
-def cleanUpRightScripts():
+def cleanUpRightScripts(right):
 	SCRIPTS_TO_SAVE = [25089, 26558, 26524, 26463, 26525, 34457, 34458, 33928, 34462, 29978, 29974, 24565, 28164, 5508, 26559, 26522, 21020, 26560, 26523, 24577, 26706, 24578, 28031, 27733, 27726, 26702, 24570, 27948, 26716, 26717, 26528, 26552, 26561, 26553, 26556, 26956, 27727, 27593, 26957, 26557, 26527, 26554, 26466, 39356, 39358, 39391]
 	index = right.rightscripts_index()
 	xmldoc = minidom.parseString(index.read())
@@ -135,6 +134,8 @@ if __name__ == '__main__':
 	import sys
 	from xml.dom import minidom
 	
-	cleanUpDeployments()
-	#cleanUpServerTemplates()
-	#cleanUpRightScripts()
+	right = RightScale(sys.argv[1], sys.argv[2], 2951)
+	
+	cleanUpDeployments(right)
+	#cleanUpServerTemplates(right)
+	#cleanUpRightScripts(right)
