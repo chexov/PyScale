@@ -9,6 +9,7 @@ class RightScale(object):
 		self.account = str(account)
 		self.resource_url = '/api/acct/%s/%s/%s'
 		self.collection_url = '/api/acct/%s/%s'
+		self.action_url = '/api/acct/%s/%s/%s/%s'
 		self.credentials = base64.encodestring('%s:%s' % (self.username, self.password))[:-1]
 		self.headers = {
 						'Authorization': 'Basic %s' % self.credentials,
@@ -21,12 +22,16 @@ class RightScale(object):
 	def _init_urls(self):
 		self.resource_url = self.resource_url % (self.account, '%s', '%s')
 		self.collection_url = self.collection_url % (self.account, '%s')
+		self.action_url = self.action_url % (self.account, '%s', '%s', '%s')
 	
-	def build_url(self, resource, resource_id=None):
+	def build_url(self, resource, resource_id=None, action=None):
 		if resource_id == None:
 			url = self.collection_url % resource
 		else:
-			url = self.resource_url % (resource, resource_id)
+			if action == None:
+				url = self.resource_url % (resource, resource_id)
+			else:
+				url = self.action_url % (resource, resource_id, action)
 		return url
 	
 	def http_auth_request(self, url):
@@ -38,7 +43,17 @@ class RightScale(object):
 	def servers_index(self):
 		servers_url = self.build_url('servers')
 		
-		response = self.http_auth_request(servers_url)
+		self.conn.request('GET', servers_url, body=None, headers=self.headers)
+		response = self.conn.getresponse()
+		
+		return response
+	
+	def servers_stop(self, resource_id):
+		server_url = self.build_url('servers', str(resource_id), action='stop')
+		
+		self.conn.request('POST', server_url, body=None, headers=self.headers)
+		response = self.conn.getresponse()
+		
 		return response
 	
 	def servers_delete(self, resource_id):
@@ -76,7 +91,18 @@ class RightScale(object):
 	
 	def rightscripts_delete(self, resource_id):
 		self._DELETE_resource('right_scripts', resource_id)
-	 
+	
+	def arrays_index(self):
+		arrays_url = self.build_url('server_arrays')
+		
+		self.conn.request('GET', arrays_url, body=None, headers=self.headers)
+		response = self.conn.getresponse()
+		
+		return response
+	
+	def arrays_delete(self, resource_id):
+		self._DELETE_resource('server_arrays', resource_id)
+	
 	def _DELETE_resource(self, resource, resource_id):
 		url = self.build_url(resource, str(resource_id))
 		
@@ -87,55 +113,3 @@ class RightScale(object):
 	
 
 
-def cleanUpDeployments(right):
-	DEPLOYMENTS_TO_SAVE = [3201, 12228, 8610, 15852]
-		
-	index = right.deployments_index()
-	xmldoc = minidom.parseString(index.read())
-		
-	for deployment in xmldoc.getElementsByTagName('deployment'):
-		href = deployment.getElementsByTagName('href')[0]
-		
-		deployment_id = int(href.firstChild.data.split('/')[-1])
-		if not deployment_id in DEPLOYMENTS_TO_SAVE:
-			print "Deleting deployment: %d" % deployment_id
-			right.deployments_delete(deployment_id)
-
-
-def cleanUpServerTemplates(right):
-	SERVERTEMPLATES_TO_SAVE = [13792, 919, 13788, 13745, 13791, 13088, 13793, 13777, 16962, 15507, 18060, 20483, 20484]
-	index = right.servertemplates_index()
-	xmldoc = minidom.parseString(index.read())
-		
-	for template in xmldoc.getElementsByTagName('href'):
-		template_id = int(template.firstChild.data.split('/')[-1])
-		
-		if not template_id in SERVERTEMPLATES_TO_SAVE:
-			print "Deleting server template: %d" % template_id
-			right.servertemplates_delete(template_id)
-	
-	
-def cleanUpRightScripts(right):
-	SCRIPTS_TO_SAVE = [25089, 26558, 26524, 26463, 26525, 34457, 34458, 33928, 34462, 29978, 29974, 24565, 28164, 5508, 26559, 26522, 21020, 26560, 26523, 24577, 26706, 24578, 28031, 27733, 27726, 26702, 24570, 27948, 26716, 26717, 26528, 26552, 26561, 26553, 26556, 26956, 27727, 27593, 26957, 26557, 26527, 26554, 26466, 39356, 39358, 39391]
-	index = right.rightscripts_index()
-	xmldoc = minidom.parseString(index.read())
-	
-	for script in xmldoc.getElementsByTagName('href'):
-		script_id = int(script.firstChild.data.split('/')[-1])
-		
-		if not script_id in SCRIPTS_TO_SAVE:
-			print "Deleting rightscript: %d" % script_id
-			right.rightscripts_delete(script_id)
-
-
-
-
-if __name__ == '__main__':
-	import sys
-	from xml.dom import minidom
-	
-	right = RightScale(sys.argv[1], sys.argv[2], 2951)
-	
-	cleanUpDeployments(right)
-	#cleanUpServerTemplates(right)
-	#cleanUpRightScripts(right)
